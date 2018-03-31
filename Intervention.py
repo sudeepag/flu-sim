@@ -1,5 +1,3 @@
 class Intervention():
-  
-  def init(self, cost):
-    self.cost = cost 
-    
+    def __init__(self, _cost):
+        self.cost = _cost
