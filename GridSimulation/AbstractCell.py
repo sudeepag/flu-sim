@@ -3,7 +3,7 @@ class AbstractCell:
         self.attributes = attributes
         self.state = state
 
-    def update(self, updates):
+    def update(self, histogram):
         pass
 
     def intervene(self, intervention):
