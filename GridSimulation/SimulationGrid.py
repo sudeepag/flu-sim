@@ -21,29 +21,25 @@ class SimulationGrid:
         left, right, up, down = False, False, False, False
         if col == 0:
             right = True
-            neighbors.append(self.grid[row][col + 1].state)
+            neighbors.append(self.grid[row][col + 1].attributes)
         if row == 0:
             down = True
-            neighbors.append(self.grid[row - 1][col].state)
+            neighbors.append(self.grid[row - 1][col].attributes)
         if col == self.rows - 1:
             left = True
-            neighbors.append(self.grid[row][col - 1].state)
+            neighbors.append(self.grid[row][col - 1].attributes)
         if row == self.cols - 1:
             up = True
-            neighbors.append(self.grid[row + 1][col].state)
+            neighbors.append(self.grid[row + 1][col].attributes)
         if right and down:
-            neighbors.append(self.grid[row + 1][col + 1].state)
+            neighbors.append(self.grid[row + 1][col + 1].attributes)
         if left and down:
-            neighbors.append(self.grid[row + 1][col - 1].state)
+            neighbors.append(self.grid[row + 1][col - 1].attributes)
         if right and up:
-            neighbors.append(self.grid[row - 1][col + 1].state)
+            neighbors.append(self.grid[row - 1][col + 1].attributes)
         if left and up:
-            neighbors.append(self.grid[row - 1][col - 1].state)
-
-        histogram = defaultdict(int)
-        for n in neighbors:
-            histogram[n] += 1
-        return histogram
+            neighbors.append(self.grid[row - 1][col - 1].attributes)
+        return neighbors
 
     def iterate(self):
         new_grid = np.array([[object() for _ in range(self.cols)] for __ in range(self.rows)],
