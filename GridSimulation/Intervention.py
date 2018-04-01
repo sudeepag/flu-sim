@@ -1,3 +1,4 @@
-class Intervention():
-    def __init__(self, _cost):
-        self.cost = _cost
+class Intervention:
+    def __init__(self, type, cost):
+    	self.type = type
+        self.cost = cost

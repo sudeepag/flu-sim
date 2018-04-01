@@ -40,16 +40,3 @@ class SimulationGrid:
         if left and up:
             neighbors.append(self.grid[row - 1][col - 1].attributes)
         return neighbors
-
-    def iterate(self):
-        new_grid = np.array([[object() for _ in range(self.cols)] for __ in range(self.rows)],
-                            dtype=object)
-        for row in range(self.rows):
-            for col in range(self.cols):
-                neighboring_states = self.calculate_neighbors(row, col)
-                new_grid[row][col] = self.grid[row][col].update(neighboring_states)
-        self.grid = new_grid
-
-    def run(self, iterations):
-        for _ in range(iterations):
-            self.iterate()
