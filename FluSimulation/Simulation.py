@@ -1,7 +1,17 @@
 import random
+from scipy.stats import chi2
 from GridSimulation.AbstractCell import AbstractCell
 from GridSimulation.SimulationGrid import SimulationGrid
 import argparse
+
+
+RESISTANCE_THRESHOLD = 0.1
+MASK_BENEFIT = 0.5
+DOSE_BENEFIT = 2
+VACCINE_BENEFIT = 0.5
+
+BASE_INFECTABILITY = 0.3
+INFECTABILITY_MEAN = 4
 
 class States:
     SUSCEPTIBLE = 1
@@ -14,17 +24,38 @@ class InterventionType:
     VACCINE = 2
 
 class FluCell(object, AbstractCell):
-    def __init__(self, state, attributes):
-        self.infected_time = 0
-        super(FluCell, self).__init__(attributes=attributes, state=state)
+    def __init__(self, infectibility, suseptibility):
+        self.attributes = {"infected_time": 0,
+                           "infectability": infectibility,
+                           "suseptibility": suseptibility}
+        self.hasMask = False
+        self.setState()
 
-    def update(self, histogram):
-        if self.state is States.INFECTED:
-            self.infected_time += 1
-        if self.infected_time > 5:
-            self.state = States.RESISTANT
-        if self.state is States.SUSCEPTIBLE and histogram[States.INFECTED] > 3:
+    def applyIntervention(self, type):
+        if type == InterventionType.MASK and not self.hasMask:
+            self.attributes["infectability"] *= MASK_BENEFIT
+        elif type == InterventionType.DOSE:
+            self.attributes["infected_time"] *= DOSE_BENEFIT
+        elif type == InterventionType.VACCINE:
+            self.attributes["suseptibility"] *= VACCINE_BENEFIT
+
+    def update(self, neighbors):
+        for neighbor in neighbors:
+            if random.random() < self.attributes["suseptibility"] * neighbor["infectability"]:
+                self.attributes["suseptibility"] = 0
+                self.attributes["infectability"] = BASE_INFECTABILITY
+        self.attributes["infectability"] = BASE_INFECTABILITY + chi2.cdf(self.attributes["infected_time"], INFECTABILITY_MEAN)
+        self.setState()
+
+    def setState(self):
+        if self.attributes["infectability"] != 0:
             self.state = States.INFECTED
+        elif self.attributes["suseptibility"] < 0.2:
+            self.state = States.RESISTANT
+        else:
+            self.state = States.SUSCEPTIBLE
+
+
 
 class Simulation:
 
