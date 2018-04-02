@@ -1,6 +1,7 @@
 import random
 from scipy.stats import chi2
 from GridSimulation.AbstractCell import AbstractCell
+from GridSimulation.Intervention import Intervention
 from GridSimulation.SimulationGrid import SimulationGrid
 import argparse
 
@@ -12,6 +13,10 @@ VACCINE_BENEFIT = 0.5
 
 BASE_INFECTABILITY = 0.3
 INFECTABILITY_MEAN = 4
+
+MASK_COST = 1.0
+DOSE_COST = 57.0
+VACCINE_COST = 40.0
 
 class States:
     SUSCEPTIBLE = 1
@@ -65,6 +70,9 @@ class Simulation:
         self.masks = masks
         self.doses = doses
         self.vaccines = vaccines
+        self.masks_used = 0
+        self.doses_used = 0
+        self.vaccines_used = 0
 
         self.grid = SimulationGrid((dim, dim), global_state=None)
         for row in range(dim):
@@ -77,17 +85,31 @@ class Simulation:
         self.interventions = []
 
     def update(self):
+
+        # Add interventions probabilistically
+        if self.masks_used < self.masks and random.random() > 0.5:
+            self.interventions.append(Intervention(InterventionType.MASK, MASK_COST))
+            self.masks_used += 1
+        if self.doses_used < self.doses and random.random() > 0.5:
+            self.interventions.append(Intervention(InterventionType.DOSE, DOSE_COST))
+            self.doses_used += 1
+        if self.vaccines_used < self.vaccines and random.random() > 0.5:
+            self.interventions.append(Intervention(InterventionType.VACCINE, VACCINE_COST))
+            self.vaccines_used += 1
+
+        # Apply interventions at random
+        for interventions in self.interventions:
+            pass
+
         # Propagate neighbor states
-
-        # new_grid = np.array([[object() for _ in range(self.cols)] for __ in range(self.rows)],
-        #                     dtype=object)
-        # for row in range(self.rows):
-        #     for col in range(self.cols):
-        #         neighboring_states = self.calculate_neighbors(row, col)
-        #         new_grid[row][col] = self.grid[row][col].update(neighboring_states)
-        # self.grid = new_grid
-
-        # Update interventions list
+        new_grid = np.array([[object() for _ in range(self.cols)] for __ in range(self.rows)],
+                            dtype=object)
+        for row in range(self.rows):
+            for col in range(self.cols):
+                cell = self.grid[row][col]
+                neighbors = self.grid.get_neighbors(cell)
+                new_grid[row][col] = cell.update(neighbors)
+        self.grid = new_grid
 
     def run(self):
         for _ in range(self.n_iterations):
