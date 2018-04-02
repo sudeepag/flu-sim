@@ -19,24 +19,24 @@ class SimulationGrid:
     def get_neighbors(self, row, col):
         neighbors = []
         left, right, up, down = False, False, False, False
-        if col == 0:
-            right = True
-            neighbors.append(self.grid[row][col + 1])
-        if row == 0:
-            down = True
-            neighbors.append(self.grid[row - 1][col])
-        if col == self.rows - 1:
+        if col > 0:
             left = True
-            neighbors.append(self.grid[row][col - 1])
-        if row == self.cols - 1:
+            neighbors.append(self.grid[row][col - 1].attributes)
+        if row > 0:
             up = True
-            neighbors.append(self.grid[row + 1][col])
+            neighbors.append(self.grid[row - 1][col].attributes)
+        if col < self.rows - 1:
+            right = True
+            neighbors.append(self.grid[row][col + 1].attributes)
+        if row < self.cols - 1:
+            down = True
+            neighbors.append(self.grid[row + 1][col].attributes)
         if right and down:
-            neighbors.append(self.grid[row + 1][col + 1])
+            neighbors.append(self.grid[row + 1][col + 1].attributes)
         if left and down:
-            neighbors.append(self.grid[row + 1][col - 1])
+            neighbors.append(self.grid[row + 1][col - 1].attributes)
         if right and up:
-            neighbors.append(self.grid[row - 1][col + 1])
+            neighbors.append(self.grid[row - 1][col + 1].attributes)
         if left and up:
-            neighbors.append(self.grid[row - 1][col - 1])
+            neighbors.append(self.grid[row - 1][col - 1].attributes)
         return neighbors

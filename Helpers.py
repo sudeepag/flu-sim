@@ -1,3 +1,4 @@
+from Constants import TIME
 class Logger:
 
 	def __init__(self, n_iterations):
@@ -9,3 +10,6 @@ class Logger:
 	def print_log(self, ts):
 		for l in self._log[ts]:
 			print(l)
+
+
+logger = Logger(TIME)

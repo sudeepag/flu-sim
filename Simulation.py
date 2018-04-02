@@ -3,23 +3,10 @@ import random
 from AbstractCell import AbstractCell
 from Intervention import Intervention
 from SimulationGrid import SimulationGrid
-from Helpers import Logger
+from Helpers import logger
 import argparse
 import numpy as np
-
-RESISTANCE_THRESHOLD = 0.1
-MASK_BENEFIT = 0.5
-DOSE_BENEFIT = 2
-VACCINE_BENEFIT = 0.5
-
-BASE_SUSCEPTABILITY = 0.3
-BASE_INFECTABILITY = 0.3
-# INFECTABILITY_MEAN = 4
-MAX_INFECTABILITY = 0.6
-
-MASK_COST = 1.0
-DOSE_COST = 57.0
-VACCINE_COST = 40.0
+from Constants import *
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dim', metavar='dim', type=int, nargs=1, help='Size of n x n grid')
@@ -37,7 +24,6 @@ N_DOSES = args.doses[0] if args.doses else 20
 N_VACCINES = args.vaccines[0] if args.vaccines else 20
 
 global logger
-logger = Logger(TIME)
 
 class States:
     SUSCEPTIBLE = 1
@@ -53,7 +39,7 @@ class FluCell(AbstractCell):
     def __init__(self, suseptibility=None, infected_time=None, attributes=None, hasMask=None, hasDose=None, hasVaccine=None):
         if attributes is None:
             self.attributes = {"infected_time": infected_time,
-                           "infectability": BASE_INFECTABILITY + (MAX_INFECTABILITY - BASE_INFECTABILITY) * (1 / infected_time),
+                           "infectability": (BASE_INFECTABILITY + (MAX_INFECTABILITY - BASE_INFECTABILITY) * (1 / infected_time) if infected_time is not 0 else 0),
                            "suseptibility": suseptibility}
             self.hasMask = False
             self.hasDose = False
@@ -75,18 +61,24 @@ class FluCell(AbstractCell):
             self.attributes["suseptibility"] *= VACCINE_BENEFIT
 
     def update(self, neighbors):
-        attributes = {"suseptibility": None,
-                      "infectabiity": None,
-                      "infected_time": None}
+        attributes = {"suseptibility": self.attributes["suseptibility"],
+                      "infectability": self.attributes["infectability"],
+                      "infected_time": self.attributes["infected_time"]}
         for neighbor in neighbors:
             if random.random() < self.attributes["suseptibility"] * neighbor["infectability"]:
                 attributes["suseptibility"] = 0
                 attributes["infectability"] = BASE_INFECTABILITY
-        attributes["infectability"] = BASE_INFECTABILITY + (MAX_INFECTABILITY - BASE_INFECTABILITY) * (1 / attributes["infected_time"])
-        if self.hasMask:
-            attributes["infectibility"] *= MASK_BENEFIT
-        attributes["infected_time"] = attributes["infected_time"] + (1 if attributes["infectability"] > 0 else 0)
-        return FluCell(attributes, self.hasMask, self.hasDose, self.hasVaccine)
+        if attributes["infectability"] > 0:
+            attributes["infected_time"] = attributes["infected_time"] + 1
+            attributes["infectability"] = BASE_INFECTABILITY + (MAX_INFECTABILITY - BASE_INFECTABILITY) * (1 / attributes["infected_time"])
+            if self.hasMask:
+                attributes["infectibility"] *= MASK_BENEFIT
+            attributes["infected_time"] = attributes["infected_time"] + 1
+        else:
+            attributes["infectability"] = 0
+            attributes["infected_time"] = 0
+
+        return FluCell(attributes=attributes, hasMask=self.hasMask, hasDose=self.hasDose, hasVaccine=self.hasVaccine)
 
     def setState(self):
         if self.attributes["infectability"] != 0:
@@ -116,11 +108,10 @@ class Simulation:
         self.grid = SimulationGrid((dim, dim), global_state=None)
         for row in range(dim):
             for col in range(dim):
-                cell = FluCell(States.SUSCEPTIBLE, [])
                 if random.random() < .05:
-                    cell = FluCell(suseptibility = 0, infected_time = 1)
+                    cell = FluCell(suseptibility=0, infected_time=1)
                 else:
-                    cell = FluCell(suseptibility = np.random.uniform(low=BASE_SUSCEPTABILITY - 0.1, high=BASE_SUSCEPTABILITY + 0.1))
+                    cell = FluCell(suseptibility=np.random.uniform(low=BASE_SUSCEPTABILITY - 0.1, high=BASE_SUSCEPTABILITY + 0.1), infected_time=0)
                 self.grid.populate(location=(row, col), cell=cell)
 
         self.interventions = []
@@ -135,8 +126,8 @@ class Simulation:
     def update(self):
 
         # Apply interventions probabilistically
-        for row in range(self.rows):
-            for col in range(self.cols):
+        for row in range(self.grid.rows):
+            for col in range(self.grid.cols):
                 if len(self.interventions) > 0 and random.random() < self.intervention_prob:
                     cell =  self.grid[row][col]
                     intervention = self.interventions[-1]
@@ -150,13 +141,12 @@ class Simulation:
                     self.interventions = self.interventions[:-1]
 
         # Propagate neighbor states
-        new_grid = np.array([[object() for _ in range(self.cols)] for __ in range(self.rows)],
-                            dtype=object)
-        for row in range(self.rows):
-            for col in range(self.cols):
-                cell = self.grid[row][col]
-                neighbors = self.grid.get_neighbors(cell)
-                new_grid[row][col] = cell.update(neighbors)
+        new_grid = SimulationGrid((self.grid.rows, self.grid.rows), global_state=None)
+        for row in range(self.grid.rows):
+            for col in range(self.grid.cols):
+                cell = self.grid.grid[row][col]
+                neighbors = self.grid.get_neighbors(row, col)
+                new_grid.grid[row][col] = cell.update(neighbors)
         self.grid = new_grid
 
     def run(self):
