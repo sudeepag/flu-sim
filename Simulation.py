@@ -1,12 +1,13 @@
 import random
 # from scipy.stats import chi2
 from AbstractCell import AbstractCell
-from Intervention import Intervention
+from Intervention import Intervention, InterventionType
 from SimulationGrid import SimulationGrid
 from Helpers import logger
 import argparse
 import numpy as np
 from Constants import *
+import math
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dim', metavar='dim', type=int, nargs=1, help='Size of n x n grid')
@@ -17,26 +18,24 @@ parser.add_argument('--vaccines', metavar='pickerqcap', type=int, nargs=1, help=
 args = parser.parse_args()
 
 # Handle inputs
-DIM = args.dim[0] if args.dim else 100
+DIM = args.dim[0] if args.dim else 10
 TIME = args.time[0] if args.time else 100
-N_MASKS = args.masks[0] if args.masks else 20
-N_DOSES = args.doses[0] if args.doses else 20
-N_VACCINES = args.vaccines[0] if args.vaccines else 20
+N_MASKS = args.masks[0] if args.masks else 10
+N_DOSES = args.doses[0] if args.doses else 10
+N_VACCINES = args.vaccines[0] if args.vaccines else 10
 
 global logger
+global curr_t
+curr_t = 0
 
 class States:
     SUSCEPTIBLE = 1
     INFECTED = 2
     RESISTANT = 3
 
-class InterventionType:
-    MASK = 0
-    DOSE = 1
-    VACCINE = 2
-
 class FluCell(AbstractCell):
-    def __init__(self, suseptibility=None, infected_time=None, attributes=None, hasMask=None, hasDose=None, hasVaccine=None):
+    def __init__(self, position, suseptibility=None, infected_time=None, attributes=None, hasMask=None, hasDose=None, hasVaccine=None):
+        self.position = position
         if attributes is None:
             self.attributes = {"infected_time": infected_time,
                            "infectability": (BASE_INFECTABILITY + (MAX_INFECTABILITY - BASE_INFECTABILITY) * (1 / infected_time) if infected_time is not 0 else 0),
@@ -51,6 +50,8 @@ class FluCell(AbstractCell):
             self.hasVaccine = hasVaccine
         self.setState()
 
+    def __repr__(self):
+    	return str(self.position)
 
     def applyIntervention(self, intervention):
         if intervention.type == InterventionType.MASK and not self.hasMask:
@@ -78,7 +79,7 @@ class FluCell(AbstractCell):
             attributes["infectability"] = 0
             attributes["infected_time"] = 0
 
-        return FluCell(attributes=attributes, hasMask=self.hasMask, hasDose=self.hasDose, hasVaccine=self.hasVaccine)
+        return FluCell(position=self.position, attributes=attributes, hasMask=self.hasMask, hasDose=self.hasDose, hasVaccine=self.hasVaccine)
 
     def setState(self):
         if self.attributes["infectability"] != 0:
@@ -101,17 +102,18 @@ class Simulation:
         self.vaccines_used = 0
 
         n_interventions = self.masks + self.doses + self.vaccines
-        n_interventions_per_ts = int(n_interventions / n_iterations)
+        n_interventions_per_ts = math.ceil(n_interventions / n_iterations)
         n_cells = self.dim ** 2
         self.intervention_prob = n_interventions_per_ts / n_cells
+        print(self.intervention_prob)
 
         self.grid = SimulationGrid((dim, dim), global_state=None)
         for row in range(dim):
             for col in range(dim):
                 if random.random() < .05:
-                    cell = FluCell(suseptibility=0, infected_time=1)
+                    cell = FluCell(position=(row, col), suseptibility=0, infected_time=1)
                 else:
-                    cell = FluCell(suseptibility=np.random.uniform(low=BASE_SUSCEPTABILITY - 0.1, high=BASE_SUSCEPTABILITY + 0.1), infected_time=0)
+                    cell = FluCell(position=(row, col), suseptibility=np.random.uniform(low=BASE_SUSCEPTABILITY - 0.1, high=BASE_SUSCEPTABILITY + 0.1), infected_time=0)
                 self.grid.populate(location=(row, col), cell=cell)
 
         self.interventions = []
@@ -128,9 +130,10 @@ class Simulation:
         # Apply interventions probabilistically
         for row in range(self.grid.rows):
             for col in range(self.grid.cols):
-                if len(self.interventions) > 0 and random.random() < self.intervention_prob:
+            	if len(self.interventions) > 0 and random.random() < self.intervention_prob:
                     cell =  self.grid[row][col]
                     intervention = self.interventions[-1]
+                    logger.log(curr_t, 'Applying intervention %s to Cell %s' % (intervention, cell.position))
                     if intervention.type == InterventionType.MASK:
                         self.masks_used += 1
                     elif intervention.type == InterventionType.DOSE:
@@ -150,10 +153,13 @@ class Simulation:
         self.grid = new_grid
 
     def run(self):
-        for curr_t in range(self.n_iterations):
-            logger.log(curr_t, 'TIMESTEP: %d' % curr_t)
-            self.update()
-            logger.print_log(curr_t)
+    	global curr_t
+    	for _ in range(self.n_iterations):
+        	logger.log(curr_t, '\nTIMESTEP: %d' % curr_t)
+        	self.update()
+        	logger.print_log(curr_t)
+        	curr_t += 1
 
 sim = Simulation(DIM, TIME, N_MASKS, N_DOSES, N_VACCINES)
 sim.run()
+print(sim.intervention_prob)
