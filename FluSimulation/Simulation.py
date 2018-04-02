@@ -34,14 +34,16 @@ class FluCell(object, AbstractCell):
                            "infectability": infectibility,
                            "suseptibility": suseptibility}
         self.hasMask = False
+        self.hasDose = False
+        self.hasVaccine = False
         self.setState()
 
     def applyIntervention(self, type):
         if type == InterventionType.MASK and not self.hasMask:
             self.attributes["infectability"] *= MASK_BENEFIT
-        elif type == InterventionType.DOSE:
+        elif type == InterventionType.DOSE and not self.hasDose:
             self.attributes["infected_time"] *= DOSE_BENEFIT
-        elif type == InterventionType.VACCINE:
+        elif type == InterventionType.VACCINE and not self.hasVaccine:
             self.attributes["suseptibility"] *= VACCINE_BENEFIT
 
     def update(self, neighbors):
