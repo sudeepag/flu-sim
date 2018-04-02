@@ -4,7 +4,7 @@ from GridSimulation.AbstractCell import AbstractCell
 from GridSimulation.Intervention import Intervention
 from GridSimulation.SimulationGrid import SimulationGrid
 import argparse
-
+import numpy as np
 
 RESISTANCE_THRESHOLD = 0.1
 MASK_BENEFIT = 0.5
@@ -38,6 +38,15 @@ class FluCell(object, AbstractCell):
         self.hasVaccine = False
         self.setState()
 
+    def __init__(self, attributes, hasMask, hasDose, hasVaccine):
+        self.attributes = attributes
+        self.hasMask = hasMask
+        self.hasDose = hasDose
+        self.hasVaccine = hasVaccine
+        self.setState()
+
+
+
     def applyIntervention(self, type):
         if type == InterventionType.MASK and not self.hasMask:
             self.attributes["infectability"] *= MASK_BENEFIT
@@ -47,12 +56,16 @@ class FluCell(object, AbstractCell):
             self.attributes["suseptibility"] *= VACCINE_BENEFIT
 
     def update(self, neighbors):
+        attributes = {"suseptibility": None,
+                      "infectabiity": None,
+                      "infected_time": None}
         for neighbor in neighbors:
             if random.random() < self.attributes["suseptibility"] * neighbor["infectability"]:
-                self.attributes["suseptibility"] = 0
-                self.attributes["infectability"] = BASE_INFECTABILITY
-        self.attributes["infectability"] = BASE_INFECTABILITY + chi2.cdf(self.attributes["infected_time"], INFECTABILITY_MEAN)
-        self.setState()
+                attributes["suseptibility"] = 0
+                attributes["infectability"] = BASE_INFECTABILITY
+        attributes["infectability"] = BASE_INFECTABILITY + chi2.cdf(attributes["infected_time"], INFECTABILITY_MEAN)
+        attributes["infected_time"] = attributes["infected_time"] + (1 if attributes["infectability"] > 0 else 0)
+        return FluCell(attributes, self.hasMask, self.hasDose, self.hasVaccine)
 
     def setState(self):
         if self.attributes["infectability"] != 0:
