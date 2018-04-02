@@ -47,12 +47,12 @@ class FluCell(object, AbstractCell):
 
 
 
-    def applyIntervention(self, type):
-        if type == InterventionType.MASK and not self.hasMask:
+    def applyIntervention(self, intervention):
+        if intervention.type == InterventionType.MASK and not self.hasMask:
             self.attributes["infectability"] *= MASK_BENEFIT
-        elif type == InterventionType.DOSE and not self.hasDose:
+        elif intervention.type == InterventionType.DOSE and not self.hasDose:
             self.attributes["infected_time"] *= DOSE_BENEFIT
-        elif type == InterventionType.VACCINE and not self.hasVaccine:
+        elif intervention.type == InterventionType.VACCINE and not self.hasVaccine:
             self.attributes["suseptibility"] *= VACCINE_BENEFIT
 
     def update(self, neighbors):
@@ -89,6 +89,11 @@ class Simulation:
         self.doses_used = 0
         self.vaccines_used = 0
 
+        n_interventions = self.masks + self.doses + self.vaccines
+        n_interventions_per_ts = int(n_interventions / n_iterations)
+        n_cells = self.dim ** 2
+        self.intervention_prob = n_interventions_per_ts / n_cells
+
         self.grid = SimulationGrid((dim, dim), global_state=None)
         for row in range(dim):
             for col in range(dim):
@@ -98,23 +103,30 @@ class Simulation:
                 self.grid.populate(location=(row, col), cell=cell)
 
         self.interventions = []
+        for _ in range(self.masks):
+            self.interventions.append(Intervention(InterventionType.MASK, MASK_COST))
+        for _ in range(self.doses):
+            self.interventions.append(Intervention(InterventionType.DOSE, DOSE_COST))
+        for _ in range(self.vaccines):
+            self.interventions.append(Intervention(InterventionType.VACCINE, VACCINE_COST))
+        np.random.shuffle(self.interventions)
 
     def update(self):
-
-        # Add interventions probabilistically
-        if self.masks_used < self.masks and random.random() > 0.5:
-            self.interventions.append(Intervention(InterventionType.MASK, MASK_COST))
-            self.masks_used += 1
-        if self.doses_used < self.doses and random.random() > 0.5:
-            self.interventions.append(Intervention(InterventionType.DOSE, DOSE_COST))
-            self.doses_used += 1
-        if self.vaccines_used < self.vaccines and random.random() > 0.5:
-            self.interventions.append(Intervention(InterventionType.VACCINE, VACCINE_COST))
-            self.vaccines_used += 1
-
-        # Apply interventions at random
-        for interventions in self.interventions:
-            pass
+        
+        # Apply interventions probabilistically
+        for row in range(self.rows):
+            for col in range(self.cols):
+                if len(self.interventions) > 0 and random.random() < self.intervention_prob:
+                    cell =  self.grid[row][col]
+                    intervention = self.interventions[-1]
+                    if intervention.type == InterventionType.MASK:
+                        self.masks_used += 1
+                    else if intervention.type == InterventionType.DOSE:
+                        self.doses_used += 1
+                    else if intervention.type == InterventionType.VACCINE:
+                        self.vaccines_used += 1
+                    cell.applyIntervention(intervention)
+                    self.interventions = self.interventions[:-1]
 
         # Propagate neighbor states
         new_grid = np.array([[object() for _ in range(self.cols)] for __ in range(self.rows)],
