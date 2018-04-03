@@ -147,7 +147,7 @@ class Simulation:
                 if len(self.interventions) > 0 and random.random() < self.intervention_prob:
                     cell = self.grid.grid[row][col]
                     intervention = self.interventions[-1]
-                    logger.log(curr_t, 'Applying intervention %s to Cell %s' % (intervention, cell.position))
+                    print 'Applying intervention %s to Cell %s' % (intervention, cell.position)
                     if intervention.type == InterventionType.MASK:
                         self.masks_used += 1
                     elif intervention.type == InterventionType.DOSE:
@@ -172,7 +172,7 @@ class Simulation:
     def run(self):
         global curr_t
         for _ in range(self.n_iterations):
-            logger.log(curr_t, '\nTIMESTEP: %d' % curr_t)
+            print '\nTIMESTEP: %d' % curr_t
             self.update()
             logger.print_log(curr_t)
             curr_t += 1
