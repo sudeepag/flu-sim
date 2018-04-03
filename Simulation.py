@@ -139,7 +139,7 @@ class Simulation:
         np.random.shuffle(self.interventions)
 
     def update(self):
-
+        global curr_t
         # Apply interventions probabilistically
         infected = 0
         for row in range(self.grid.rows):
