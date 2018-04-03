@@ -139,7 +139,7 @@ class Simulation:
         np.random.shuffle(self.interventions)
 
     def update(self):
-
+        global curr_t
         # Apply interventions probabilistically
         infected = 0
         for row in range(self.grid.rows):
@@ -147,7 +147,7 @@ class Simulation:
                 if len(self.interventions) > 0 and random.random() < self.intervention_prob:
                     cell = self.grid.grid[row][col]
                     intervention = self.interventions[-1]
-                    logger.log(curr_t, 'Applying intervention %s to Cell %s' % (intervention, cell.position))
+                    logger.log(curr_t, '\nApplying intervention %s to Cell %s' % (intervention, cell.position))
                     if intervention.type == InterventionType.MASK:
                         self.masks_used += 1
                     elif intervention.type == InterventionType.DOSE:

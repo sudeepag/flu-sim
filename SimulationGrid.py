@@ -1,5 +1,6 @@
 from collections import defaultdict
 import numpy as np
+from Helpers import logger
 
 from AbstractCell import AbstractCell
 
@@ -14,6 +15,7 @@ class SimulationGrid:
 
     def populate(self, location, cell):
         row, col = location
+        print ('Populating grid at location (%s, %s)' % (row, col))
         self.grid[row][col] = cell
 
     def get_neighbors(self, row, col):
@@ -39,4 +41,5 @@ class SimulationGrid:
             neighbors.append(self.grid[row - 1][col + 1].attributes)
         if left and up:
             neighbors.append(self.grid[row - 1][col - 1].attributes)
+        print('Calculated neighbors!')
         return neighbors
