@@ -9,6 +9,7 @@ import numpy as np
 from Constants import *
 import math
 
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--dim', metavar='dim', type=int, nargs=1, help='Size of n x n grid')
 parser.add_argument('--time', metavar='time', type=int, nargs=1, help='Number of timesteps the simulation is run for')
@@ -35,7 +36,6 @@ class States:
     SUSCEPTIBLE = 1
     INFECTED = 2
     RESISTANT = 3
-    RECOVERED = 4
 
 
 class FluCell(AbstractCell):
@@ -45,7 +45,7 @@ class FluCell(AbstractCell):
         if attributes is None:
             self.attributes = {"infected_time": infected_time,
                                "infectability": (BASE_INFECTABILITY + (MAX_INFECTABILITY - BASE_INFECTABILITY) * (
-                                           1 / infected_time) if infected_time is not 0 else 0),
+                                   1 / infected_time) if infected_time is not 0 else 0),
                                "suseptibility": suseptibility}
             self.hasMask = False
             self.hasDose = False
@@ -79,7 +79,7 @@ class FluCell(AbstractCell):
         if attributes["infectability"] > 0:
             attributes["infected_time"] = attributes["infected_time"] + 1
             attributes["infectability"] = BASE_INFECTABILITY + (MAX_INFECTABILITY - BASE_INFECTABILITY) * (
-                        1 / attributes["infected_time"])
+                1 / attributes["infected_time"])
             if self.hasMask:
                 attributes["infectibility"] *= MASK_BENEFIT
             attributes["infected_time"] = attributes["infected_time"] + 1
@@ -92,7 +92,7 @@ class FluCell(AbstractCell):
 
     def setState(self):
         if self.attributes["infected_time"] > 14:
-            self.state = States.RECOVERED
+            self.state = States.RESISTANT
         elif self.attributes["infectability"] != 0:
             self.state = States.INFECTED
         elif self.attributes["suseptibility"] < 0.2:
@@ -102,7 +102,6 @@ class FluCell(AbstractCell):
 
 
 class Simulation:
-
     def __init__(self, dim, n_iterations, masks, doses, vaccines):
         self.dim = dim
         self.n_iterations = n_iterations
@@ -177,7 +176,6 @@ class Simulation:
             self.update()
             logger.print_log(curr_t)
             curr_t += 1
-
 
 sim = Simulation(DIM, TIME, N_MASKS, N_DOSES, N_VACCINES)
 sim.run()
