@@ -41,5 +41,4 @@ class SimulationGrid:
             neighbors.append(self.grid[row - 1][col + 1].attributes)
         if left and up:
             neighbors.append(self.grid[row - 1][col - 1].attributes)
-        print('Calculated neighbors!')
         return neighbors

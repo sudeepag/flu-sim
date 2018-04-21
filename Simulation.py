@@ -10,6 +10,8 @@ from Constants import *
 import math
 
 
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--dim', metavar='dim', type=int, nargs=1, help='Size of n x n grid')
 parser.add_argument('--time', metavar='time', type=int, nargs=1, help='Number of timesteps the simulation is run for')
@@ -23,9 +25,11 @@ args = parser.parse_args()
 # Handle inputs
 DIM = args.dim[0] if args.dim else 10
 TIME = args.time[0] if args.time else 100
-N_MASKS = args.masks[0] if args.masks else 10
+N_MASKS = args.masks[0] if args.masks else 100
 N_DOSES = args.doses[0] if args.doses else 10
 N_VACCINES = args.vaccines[0] if args.vaccines else 10
+
+NUM_INFECTED = 0
 
 global logger
 global curr_t
@@ -69,13 +73,15 @@ class FluCell(AbstractCell):
             self.attributes["suseptibility"] *= VACCINE_BENEFIT
 
     def update(self, neighbors):
+        global NUM_INFECTED
         attributes = {"suseptibility": self.attributes["suseptibility"],
                       "infectability": self.attributes["infectability"],
                       "infected_time": self.attributes["infected_time"]}
         for neighbor in neighbors:
-            if random.random() < self.attributes["suseptibility"] * neighbor["infectability"]:
+            if attributes["infectability"] == 0 and random.random() * 10 < self.attributes["suseptibility"] * neighbor["infectability"]:
                 attributes["suseptibility"] = 0
                 attributes["infectability"] = BASE_INFECTABILITY
+                NUM_INFECTED += 1
         if attributes["infectability"] > 0:
             attributes["infected_time"] = attributes["infected_time"] + 1
             attributes["infectability"] = BASE_INFECTABILITY + (MAX_INFECTABILITY - BASE_INFECTABILITY) * (
@@ -91,11 +97,11 @@ class FluCell(AbstractCell):
                        hasVaccine=self.hasVaccine)
 
     def setState(self):
-        if self.attributes["infected_time"] > 14:
+        if self.attributes["infected_time"] > LENGTH_OF_DISEASE:
             self.state = States.RESISTANT
         elif self.attributes["infectability"] != 0:
             self.state = States.INFECTED
-        elif self.attributes["suseptibility"] < 0.2:
+        elif self.attributes["suseptibility"] < RESISTANCE_THRESHOLD:
             self.state = States.RESISTANT
         else:
             self.state = States.SUSCEPTIBLE
@@ -112,7 +118,7 @@ class Simulation:
         self.doses_used = 0
         self.vaccines_used = 0
 
-        n_interventions = self.masks + self.doses + self.vaccines
+        n_interventions = float(self.masks + self.doses + self.vaccines)
         n_interventions_per_ts = math.ceil(n_interventions / n_iterations)
         n_cells = self.dim ** 2
         self.intervention_prob = n_interventions_per_ts / n_cells
@@ -180,3 +186,4 @@ class Simulation:
 sim = Simulation(DIM, TIME, N_MASKS, N_DOSES, N_VACCINES)
 sim.run()
 print(sim.intervention_prob)
+print(NUM_INFECTED)
