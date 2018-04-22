@@ -61,7 +61,7 @@ def main():
     best_vec = vec
     best_score = sys.maxint
     iterations_since_new_best = 0
-    while num_iteration < MAX_ITERATIONS and iterations_since_new_best < 10:
+    while num_iteration < MAX_ITERATIONS and iterations_since_new_best < 50:
         num_iteration += 1
         sim = Simulation(DIM, TIME, vec[0], vec[1], vec[2])
         cost_v = cost(vec)
