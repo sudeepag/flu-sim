@@ -9,6 +9,9 @@ import numpy as np
 from Constants import *
 import math
 
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
 
 
 
@@ -33,6 +36,7 @@ NUM_INFECTED = 0
 
 global logger
 global curr_t
+
 curr_t = 0
 
 
@@ -123,8 +127,9 @@ class Simulation:
         n_cells = self.dim ** 2
         self.intervention_prob = n_interventions_per_ts / n_cells
         print(self.intervention_prob)
-
+        global grid
         self.grid = SimulationGrid((dim, dim), global_state=None)
+
         for row in range(dim):
             for col in range(dim):
                 if random.random() < .05:
@@ -172,7 +177,7 @@ class Simulation:
                 new_grid.grid[row][col] = cell.update(neighbors)
                 if new_grid.grid[row][col].state == States.INFECTED:
                     infected += 1
-        self.grid = new_grid
+
         print(infected)
 
     def run(self):
@@ -180,6 +185,14 @@ class Simulation:
         for _ in range(self.n_iterations):
             print '\nTIMESTEP: %d' % curr_t
             self.update()
+
+            # set up animation
+            fig, ax = plt.subplots()
+            mat = ax.matshow(self.grid) ##how to do this with grid?
+            ani = animation.FuncAnimation(fig, update, interval=50,
+                              save_count=50)
+            plt.show()
+
             logger.print_log(curr_t)
             curr_t += 1
 
