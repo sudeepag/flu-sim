@@ -26,11 +26,11 @@ parser.add_argument('--vaccines', metavar='pickerqcap', type=int, nargs=1,
 args = parser.parse_args()
 
 # Handle inputs
-DIM = args.dim[0] if args.dim else 10
+DIM = args.dim[0] if args.dim else 100
 TIME = args.time[0] if args.time else 100
-N_MASKS = args.masks[0] if args.masks else 100
-N_DOSES = args.doses[0] if args.doses else 10
-N_VACCINES = args.vaccines[0] if args.vaccines else 10
+N_MASKS = args.masks[0] if args.masks else 1000
+N_DOSES = args.doses[0] if args.doses else 100
+N_VACCINES = args.vaccines[0] if args.vaccines else 100
 
 NUM_INFECTED = 0
 
