@@ -9,7 +9,7 @@ import numpy as np
 from Constants import *
 import math
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
 
@@ -33,6 +33,7 @@ N_DOSES = args.doses[0] if args.doses else 10
 N_VACCINES = args.vaccines[0] if args.vaccines else 10
 
 NUM_INFECTED = 0
+
 
 global logger
 global curr_t
@@ -126,7 +127,8 @@ class Simulation:
         n_interventions_per_ts = math.ceil(n_interventions / n_iterations)
         n_cells = self.dim ** 2
         self.intervention_prob = n_interventions_per_ts / n_cells
-        print(self.intervention_prob)
+        if VERBOSE:
+            print(self.intervention_prob)
         global grid
         self.grid = SimulationGrid((dim, dim), global_state=None)
 
@@ -153,12 +155,14 @@ class Simulation:
         global curr_t
         # Apply interventions probabilistically
         infected = 0
+        newly_infected = 0
         for row in range(self.grid.rows):
             for col in range(self.grid.cols):
                 if len(self.interventions) > 0 and random.random() < self.intervention_prob:
                     cell = self.grid.grid[row][col]
                     intervention = self.interventions[-1]
-                    print 'Applying intervention %s to Cell %s' % (intervention, cell.position)
+                    if VERBOSE:
+                        print 'Applying intervention %s to Cell %s' % (intervention, cell.position)
                     if intervention.type == InterventionType.MASK:
                         self.masks_used += 1
                     elif intervention.type == InterventionType.DOSE:
@@ -177,26 +181,38 @@ class Simulation:
                 new_grid.grid[row][col] = cell.update(neighbors)
                 if new_grid.grid[row][col].state == States.INFECTED:
                     infected += 1
+                    if self.grid.grid[row][col].state != States.INFECTED:
+                        newly_infected += 1
 
-        print(infected)
+        self.grid = new_grid
+        if VERBOSE:
+            print(infected)
+            print(newly_infected)
+        return newly_infected
 
     def run(self):
         global curr_t
+        num_infected = 0
         for _ in range(self.n_iterations):
-            print '\nTIMESTEP: %d' % curr_t
-            self.update()
+            if VERBOSE:
+                print '\nTIMESTEP: %d' % curr_t
+            num_infected += self.update()
 
             # set up animation
-            fig, ax = plt.subplots()
-            mat = ax.matshow(self.grid) ##how to do this with grid?
-            ani = animation.FuncAnimation(fig, update, interval=50,
-                              save_count=50)
-            plt.show()
+            # fig, ax = plt.subplots()
+            # mat = ax.matshow(self.grid) ##how to do this with grid?
+            # ani = animation.FuncAnimation(fig, update, interval=50,
+            #                   save_count=50)
+            # plt.show()
 
-            logger.print_log(curr_t)
+            if VERBOSE:
+                logger.print_log(curr_t)
             curr_t += 1
+        return num_infected/float(self.n_iterations)
 
-sim = Simulation(DIM, TIME, N_MASKS, N_DOSES, N_VACCINES)
-sim.run()
-print(sim.intervention_prob)
-print(NUM_INFECTED)
+
+if __name__ == '__main__':
+    sim = Simulation(DIM, TIME, N_MASKS, N_DOSES, N_VACCINES)
+    sim.run()
+    print(sim.intervention_prob)
+    print(NUM_INFECTED)

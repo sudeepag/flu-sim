@@ -1,5 +1,7 @@
 from collections import defaultdict
 import numpy as np
+
+from Constants import VERBOSE
 from Helpers import logger
 
 from AbstractCell import AbstractCell
@@ -15,7 +17,8 @@ class SimulationGrid:
 
     def populate(self, location, cell):
         row, col = location
-        print ('Populating grid at location (%s, %s)' % (row, col))
+        if VERBOSE:
+            print ('Populating grid at location (%s, %s)' % (row, col))
         self.grid[row][col] = cell
 
     def get_neighbors(self, row, col):
