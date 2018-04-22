@@ -122,6 +122,7 @@ class Simulation:
         self.masks_used = 0
         self.doses_used = 0
         self.vaccines_used = 0
+        random.seed(42)
 
         n_interventions = float(self.masks + self.doses + self.vaccines)
         n_interventions_per_ts = math.ceil(n_interventions / n_iterations)
@@ -149,6 +150,7 @@ class Simulation:
             self.interventions.append(Intervention(InterventionType.DOSE, DOSE_COST))
         for _ in range(self.vaccines):
             self.interventions.append(Intervention(InterventionType.VACCINE, VACCINE_COST))
+        np.random.seed(42)
         np.random.shuffle(self.interventions)
 
     def update(self):

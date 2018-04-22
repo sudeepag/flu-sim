@@ -35,6 +35,7 @@ print(NUM_INFECTED)
 
 
 def getNeighbor(vec):
+    random.seed()
     masks = vec[0]
     masks += random.randint(0, 2 * NEIGHBORHOOD_SIZE) - NEIGHBORHOOD_SIZE
     if masks < 0:
@@ -57,6 +58,7 @@ def cost(vec):
 
 def main():
     num_iteration = 0
+    random.seed(42)
     vec = (random.randint(0,100), random.randint(0,100), random.randint(0,100))
     best_vec = vec
     best_score = sys.maxint
