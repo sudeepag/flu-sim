@@ -64,8 +64,10 @@ def main():
     while num_iteration < MAX_ITERATIONS and iterations_since_new_best < 10:
         num_iteration += 1
         sim = Simulation(DIM, TIME, vec[0], vec[1], vec[2])
-        score = cost(vec) * sim.run()
-        print "Iteration #: %s, Score: %s, Masks: %s, Doses: %s, Vaccines: %s" % (num_iteration, score, vec[0], vec[1], vec[2])
+        cost_v = cost(vec)
+        num_sick = sim.run()
+        score = cost_v * num_sick
+        print "Iteration #: %s, Score: %s, Cost: %s. Num sick: %s, Masks: %s, Doses: %s, Vaccines: %s" % (num_iteration, score, cost_v, num_sick, vec[0], vec[1], vec[2])
         if score < best_score:
             best_vec = vec
             best_score = score
