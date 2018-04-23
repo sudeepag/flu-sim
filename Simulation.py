@@ -11,6 +11,9 @@ import math
 
 # import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
 
 
 
@@ -28,9 +31,9 @@ args = parser.parse_args()
 # Handle inputs
 DIM = args.dim[0] if args.dim else 100
 TIME = args.time[0] if args.time else 100
-N_MASKS = args.masks[0] if args.masks else 1000
-N_DOSES = args.doses[0] if args.doses else 100
-N_VACCINES = args.vaccines[0] if args.vaccines else 100
+N_MASKS = args.masks[0] if args.masks else 100
+N_DOSES = args.doses[0] if args.doses else 10
+N_VACCINES = args.vaccines[0] if args.vaccines else 10
 
 NUM_INFECTED = 0
 
@@ -83,7 +86,7 @@ class FluCell(AbstractCell):
                       "infectability": self.attributes["infectability"],
                       "infected_time": self.attributes["infected_time"]}
         for neighbor in neighbors:
-            if attributes["infectability"] == 0 and 0.1 < self.attributes["suseptibility"] * neighbor["infectability"]:
+            if attributes["infectability"] == 0 and random.random() * 10 < self.attributes["suseptibility"] * neighbor["infectability"]:
                 attributes["suseptibility"] = 0
                 attributes["infectability"] = BASE_INFECTABILITY
                 NUM_INFECTED += 1
@@ -122,7 +125,8 @@ class Simulation:
         self.masks_used = 0
         self.doses_used = 0
         self.vaccines_used = 0
-        random.seed(42)
+        self.float_grid = np.array([[0 for _ in range(DIM)] for __ in range(DIM)],
+                              dtype=float)
 
         n_interventions = float(self.masks + self.doses + self.vaccines)
         n_interventions_per_ts = math.ceil(n_interventions / n_iterations)
@@ -150,10 +154,9 @@ class Simulation:
             self.interventions.append(Intervention(InterventionType.DOSE, DOSE_COST))
         for _ in range(self.vaccines):
             self.interventions.append(Intervention(InterventionType.VACCINE, VACCINE_COST))
-        np.random.seed(42)
         np.random.shuffle(self.interventions)
 
-    def update(self):
+    def update(self, _):
         global curr_t
         # Apply interventions probabilistically
         infected = 0
@@ -190,7 +193,14 @@ class Simulation:
         if VERBOSE:
             print(infected)
             print(newly_infected)
+        self.fgrid()
         return newly_infected
+
+    def fgrid(self):
+        for i in range(DIM):
+            for j in range(DIM):
+                self.float_grid[i][j] = self.grid.grid[i][j].state - 2
+        mat.set_array(self.float_grid)
 
     def run(self):
         global curr_t
@@ -198,14 +208,7 @@ class Simulation:
         for _ in range(self.n_iterations):
             if VERBOSE:
                 print '\nTIMESTEP: %d' % curr_t
-            num_infected += self.update()
-
-            # set up animation
-            # fig, ax = plt.subplots()
-            # mat = ax.matshow(self.grid) ##how to do this with grid?
-            # ani = animation.FuncAnimation(fig, update, interval=50,
-            #                   save_count=50)
-            # plt.show()
+            num_infected += self.update(curr_t)
 
             if VERBOSE:
                 logger.print_log(curr_t)
@@ -215,6 +218,12 @@ class Simulation:
 
 if __name__ == '__main__':
     sim = Simulation(DIM, TIME, N_MASKS, N_DOSES, N_VACCINES)
-    sim.run()
+    # sim.run()
+    fig, ax = plt.subplots()
+    mat = ax.matshow(sim.float_grid)  # how to do this with grid?
+    ani = animation.FuncAnimation(fig, sim.update, frames=100, interval=5)
+    plt.colorbar(mat)
+    plt.show()
+
     print(sim.intervention_prob)
     print(NUM_INFECTED)
