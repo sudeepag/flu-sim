@@ -54,9 +54,9 @@ class Optimizer():
 
     def optimize(self, dim=None):
         num_iteration = 0
-        random.seed(42)
+        random.seed()
         if not dim: dim = self.DIM
-        vec = (random.randint(0,100), random.randint(0,100), random.randint(0,100))
+        vec = (random.randint(0,10*self.DIM), random.randint(0,10*self.DIM), random.randint(0,10*self.DIM))
         best_vec = vec
         best_score = sys.maxint
         iterations_since_new_best = 0
@@ -66,7 +66,7 @@ class Optimizer():
             cost_v = self.cost(vec)
             num_sick = sim.run()
             score = cost_v * num_sick
-            print "Iteration #: %s, Score: %s, Cost: %s. Num sick: %s, Masks: %s, Doses: %s, Vaccines: %s" % (num_iteration, score, cost_v, num_sick, vec[0], vec[1], vec[2])
+            # print "Iteration #: %s, Score: %s, Cost: %s. Num sick: %s, Masks: %s, Doses: %s, Vaccines: %s" % (num_iteration, score, cost_v, num_sick, vec[0], vec[1], vec[2])
             if score < best_score:
                 best_vec = vec
                 best_score = score
@@ -80,12 +80,13 @@ class Optimizer():
         return (best_vec, best_score)
 
     def run(self, masks=10, doses=10, vaccines=10):
-        random.seed(42)
+        random.seed()
         sim = Simulation(self.DIM, self.TIME, masks, doses, vaccines)
         cost_v = self.cost((masks, doses, vaccines))
         num_sick = sim.run()
         score = cost_v * num_sick
-        print "Score: %s, Cost: %s. Num sick: %s, Masks: %s, Doses: %s, Vaccines: %s" % (score, cost_v, num_sick, masks, doses, vaccines)            
+        # print "Score: %s, Cost: %s. Num sick: %s, Masks: %s, Doses: %s, Vaccines: %s" % (score, cost_v, num_sick, masks, doses, vaccines)
+        # print "masks used: %s Doses used: %s Vaccines used: %s" % (sim.masks_used, sim.doses_used, sim.vaccines_used)
         return num_sick
 
 if __name__ == '__main__':

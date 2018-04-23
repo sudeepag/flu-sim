@@ -1,5 +1,7 @@
 import random
 # from scipy.stats import chi2
+import time
+
 from AbstractCell import AbstractCell
 from Intervention import Intervention, InterventionType
 from SimulationGrid import SimulationGrid
@@ -32,8 +34,8 @@ args = parser.parse_args()
 DIM = args.dim[0] if args.dim else 100
 TIME = args.time[0] if args.time else 100
 N_MASKS = args.masks[0] if args.masks else 100
-N_DOSES = args.doses[0] if args.doses else 10
-N_VACCINES = args.vaccines[0] if args.vaccines else 10
+N_DOSES = args.doses[0] if args.doses else 100
+N_VACCINES = args.vaccines[0] if args.vaccines else 100
 
 NUM_INFECTED = 0
 
@@ -75,10 +77,13 @@ class FluCell(AbstractCell):
     def applyIntervention(self, intervention):
         if intervention.type == InterventionType.MASK and not self.hasMask:
             self.attributes["infectability"] *= MASK_BENEFIT
+            self.hasMask = True
         elif intervention.type == InterventionType.DOSE and not self.hasDose:
-            self.attributes["infected_time"] *= DOSE_BENEFIT
+            self.attributes["infected_time"] += DOSE_BENEFIT
+            self.hasDose = True
         elif intervention.type == InterventionType.VACCINE and not self.hasVaccine:
             self.attributes["suseptibility"] *= VACCINE_BENEFIT
+            self.hasVaccine = True
 
     def update(self, neighbors):
         global NUM_INFECTED
@@ -86,17 +91,15 @@ class FluCell(AbstractCell):
                       "infectability": self.attributes["infectability"],
                       "infected_time": self.attributes["infected_time"]}
         for neighbor in neighbors:
-            if attributes["infectability"] == 0 and random.random() * 10 < self.attributes["suseptibility"] * neighbor["infectability"]:
+            if attributes["infectability"] == 0 and 0.13 < self.attributes["suseptibility"] * neighbor["infectability"]:
                 attributes["suseptibility"] = 0
                 attributes["infectability"] = BASE_INFECTABILITY
                 NUM_INFECTED += 1
         if attributes["infectability"] > 0:
             attributes["infected_time"] = attributes["infected_time"] + 1
-            attributes["infectability"] = BASE_INFECTABILITY + (MAX_INFECTABILITY - BASE_INFECTABILITY) * (
-                1 / attributes["infected_time"])
+            attributes["infectability"] = MAX_INFECTABILITY - MAX_INFECTABILITY/float(LENGTH_OF_DISEASE) * attributes["infected_time"]
             if self.hasMask:
-                attributes["infectibility"] *= MASK_BENEFIT
-            attributes["infected_time"] = attributes["infected_time"] + 1
+                attributes["infectability"] *= MASK_BENEFIT
         else:
             attributes["infectability"] = 0
             attributes["infected_time"] = 0
@@ -126,6 +129,7 @@ class Simulation:
         self.doses_used = 0
         self.vaccines_used = 0
         self.ms = []
+        random.seed(42)
         self.float_grid = np.array([[0 for _ in range(DIM)] for __ in range(DIM)],
                               dtype=float)
 
@@ -155,6 +159,7 @@ class Simulation:
             self.interventions.append(Intervention(InterventionType.DOSE, DOSE_COST))
         for _ in range(self.vaccines):
             self.interventions.append(Intervention(InterventionType.VACCINE, VACCINE_COST))
+        np.random.seed(42)
         np.random.shuffle(self.interventions)
 
     def update(self, _):
@@ -164,19 +169,23 @@ class Simulation:
         newly_infected = 0
         for row in range(self.grid.rows):
             for col in range(self.grid.cols):
-                if len(self.interventions) > 0 and random.random() < self.intervention_prob:
+                if len(self.interventions) > 0 and random.random() < 0.4:#self.intervention_prob:
                     cell = self.grid.grid[row][col]
                     intervention = self.interventions[-1]
                     if VERBOSE:
                         print 'Applying intervention %s to Cell %s' % (intervention, cell.position)
-                    if intervention.type == InterventionType.MASK:
+                    if intervention.type == InterventionType.MASK and not cell.hasMask:
                         self.masks_used += 1
-                    elif intervention.type == InterventionType.DOSE:
+                        cell.applyIntervention(intervention)
+                        self.interventions = self.interventions[:-1]
+                    elif intervention.type == InterventionType.DOSE and not cell.hasDose:
                         self.doses_used += 1
-                    elif intervention.type == InterventionType.VACCINE:
+                        cell.applyIntervention(intervention)
+                        self.interventions = self.interventions[:-1]
+                    elif intervention.type == InterventionType.VACCINE and cell.state == States.SUSCEPTIBLE and not cell.hasVaccine:
                         self.vaccines_used += 1
-                    cell.applyIntervention(intervention)
-                    self.interventions = self.interventions[:-1]
+                        cell.applyIntervention(intervention)
+                        self.interventions = self.interventions[:-1]
 
         # Propagate neighbor states
         new_grid = SimulationGrid((self.grid.rows, self.grid.rows), global_state=None)
@@ -211,7 +220,7 @@ class Simulation:
                 print '\nTIMESTEP: %d' % curr_t
             num_infected += self.update(curr_t)
 
-            state_matrix = [[self.grid.grid[r][c].state-2 for c in range(len(self.grid.grid[r])) ] for r in range(len(self.grid.grid))]
+            state_matrix = [[self.grid.grid[r][c].state for c in range(len(self.grid.grid[r])) ] for r in range(len(self.grid.grid))]
             self.ms.append(state_matrix)
 
             if VERBOSE:
@@ -222,6 +231,8 @@ class Simulation:
     def animate(self, i):
         print(i)
         mat.set_data(self.ms[i])
+        time.sleep(0.1)
+        # print self.ms
         return [mat]
 
 
@@ -230,8 +241,8 @@ if __name__ == '__main__':
     sim.run()
     print(sim.intervention_prob)
     print(NUM_INFECTED)
-
-    fig, ax = plt.subplots()
-    mat = ax.matshow(sim.ms[0])
-    ani = animation.FuncAnimation(fig, sim.animate, frames=range(1,sim.n_iterations), interval=1)
-    plt.show()
+    print "masks used: %s Doses used: %s Vaccines used: %s" % (sim.masks_used, sim.doses_used, sim.vaccines_used)
+    # fig, ax = plt.subplots()
+    # mat = ax.matshow(sim.ms[0])
+    # ani = animation.FuncAnimation(fig, sim.animate, frames=range(1,sim.n_iterations), blit=True)
+    # plt.show()

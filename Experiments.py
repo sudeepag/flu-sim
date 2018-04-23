@@ -35,7 +35,7 @@ def test_doses():
 def test_vaccines():
 	o = Optimizer()
 	res = []
-	for masks in range(10, 110, 10):
+	for vaccines in range(10, 110, 10):
 		res.append(np.mean([o.run(masks=0, doses=0, vaccines=vaccines) for _ in range(3)]))
 	print('Results for Varying Vaccines: ', res)
 
@@ -44,13 +44,13 @@ def main():
 
 	# Test the variation of several different parameters
 	# Find optimal scores with increasing dimension
-	# test_dim()
+	test_dim()
 
-	test_masks()
-
-	test_doses()
-
-	test_vaccines()
+	# test_masks()
+    #
+	# test_doses()
+    #
+	# test_vaccines()
 
 
 if __name__ == '__main__':
