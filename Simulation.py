@@ -125,6 +125,7 @@ class Simulation:
         self.masks_used = 0
         self.doses_used = 0
         self.vaccines_used = 0
+        self.ms = []
         self.float_grid = np.array([[0 for _ in range(DIM)] for __ in range(DIM)],
                               dtype=float)
 
@@ -193,14 +194,14 @@ class Simulation:
         if VERBOSE:
             print(infected)
             print(newly_infected)
-        self.fgrid()
+        # self.fgrid()
         return newly_infected
 
-    def fgrid(self):
-        for i in range(DIM):
-            for j in range(DIM):
-                self.float_grid[i][j] = self.grid.grid[i][j].state - 2
-        mat.set_array(self.float_grid)
+    # def fgrid(self):
+    #     for i in range(DIM):
+    #         for j in range(DIM):
+    #             self.float_grid[i][j] = self.grid.grid[i][j].state - 2
+    #     mat.set_array(self.float_grid)
 
     def run(self):
         global curr_t
@@ -210,20 +211,27 @@ class Simulation:
                 print '\nTIMESTEP: %d' % curr_t
             num_infected += self.update(curr_t)
 
+            state_matrix = [[self.grid.grid[r][c].state-2 for c in range(len(self.grid.grid[r])) ] for r in range(len(self.grid.grid))]
+            self.ms.append(state_matrix)
+
             if VERBOSE:
                 logger.print_log(curr_t)
             curr_t += 1
         return num_infected/float(self.n_iterations)
 
+    def animate(self, i):
+        print(i)
+        mat.set_data(self.ms[i])
+        return [mat]
+
 
 if __name__ == '__main__':
     sim = Simulation(DIM, TIME, N_MASKS, N_DOSES, N_VACCINES)
-    # sim.run()
-    fig, ax = plt.subplots()
-    mat = ax.matshow(sim.float_grid)  # how to do this with grid?
-    ani = animation.FuncAnimation(fig, sim.update, frames=100, interval=5)
-    plt.colorbar(mat)
-    plt.show()
-
+    sim.run()
     print(sim.intervention_prob)
     print(NUM_INFECTED)
+
+    fig, ax = plt.subplots()
+    mat = ax.matshow(sim.ms[0])
+    ani = animation.FuncAnimation(fig, sim.animate, frames=range(1,sim.n_iterations), interval=1)
+    plt.show()
