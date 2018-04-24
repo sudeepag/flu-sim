@@ -129,7 +129,7 @@ class Simulation:
         self.doses_used = 0
         self.vaccines_used = 0
         self.ms = []
-        random.seed(42)
+        # random.seed(42)
         self.float_grid = np.array([[0 for _ in range(DIM)] for __ in range(DIM)],
                               dtype=float)
 
@@ -144,11 +144,11 @@ class Simulation:
 
         for row in range(dim):
             for col in range(dim):
-                if random.random() < .05:
+                if random.random() < .003:
                     cell = FluCell(position=(row, col), suseptibility=0, infected_time=1)
                 else:
-                    cell = FluCell(position=(row, col), suseptibility=np.random.uniform(low=BASE_SUSCEPTABILITY - 0.1,
-                                                                                        high=BASE_SUSCEPTABILITY + 0.1),
+                    cell = FluCell(position=(row, col), suseptibility=np.random.uniform(low=BASE_SUSCEPTABILITY - 0.05,
+                                                                                        high=BASE_SUSCEPTABILITY + 0.05),
                                    infected_time=0)
                 self.grid.populate(location=(row, col), cell=cell)
 
@@ -242,7 +242,7 @@ if __name__ == '__main__':
     print(sim.intervention_prob)
     print(NUM_INFECTED)
     print "masks used: %s Doses used: %s Vaccines used: %s" % (sim.masks_used, sim.doses_used, sim.vaccines_used)
-    # fig, ax = plt.subplots()
-    # mat = ax.matshow(sim.ms[0])
-    # ani = animation.FuncAnimation(fig, sim.animate, frames=range(1,sim.n_iterations), blit=True)
-    # plt.show()
+    fig, ax = plt.subplots()
+    mat = ax.matshow(sim.ms[0])
+    ani = animation.FuncAnimation(fig, sim.animate, frames=range(1,sim.n_iterations), blit=True)
+    plt.show()
