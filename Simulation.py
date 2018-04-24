@@ -53,6 +53,19 @@ class States:
 
 
 class FluCell(AbstractCell):
+
+    """
+    FlueCell.__init__
+    initializer for the FlueCell class. Has two sets of parameters based on its usage
+    paramse:
+        position        location of the cell in the grid
+        suseptibility   how susceptible the cell is
+        infected_time   how long a cell ahs been infected
+        attributes      dictionary containing all of the FlueCell's attributes
+        hasMask         whether the FlueCell has a mask
+        hasDose         whether the FlueCell has a dose of medicine
+        hasVaccine      whether the FlueCell has a vaccine
+    """
     def __init__(self, position, suseptibility=None, infected_time=None, attributes=None, hasMask=None, hasDose=None,
                  hasVaccine=None):
         self.position = position
@@ -74,6 +87,12 @@ class FluCell(AbstractCell):
     def __repr__(self):
         return str(self.position)
 
+    """
+    FlueCell.applyIntervention
+    Changes the attributes of the flue cell based on the intervention type
+    params: 
+        intervention    type of intervention to be applied to the cell
+    """
     def applyIntervention(self, intervention):
         if intervention.type == InterventionType.MASK and not self.hasMask:
             self.attributes["infectability"] *= MASK_BENEFIT
@@ -85,6 +104,13 @@ class FluCell(AbstractCell):
             self.attributes["suseptibility"] *= VACCINE_BENEFIT
             self.hasVaccine = True
 
+    """
+    FlueCell.Update:
+    calculates the new values of the attributes and generates a new cell based on these values
+    params: 
+        neighbors   array of cells neighboring the Fluecell to be updated
+    returns     new FlueCell representing the updates 
+    """
     def update(self, neighbors):
         global NUM_INFECTED
         attributes = {"suseptibility": self.attributes["suseptibility"],
@@ -107,6 +133,10 @@ class FluCell(AbstractCell):
         return FluCell(position=self.position, attributes=attributes, hasMask=self.hasMask, hasDose=self.hasDose,
                        hasVaccine=self.hasVaccine)
 
+    """
+    FlueCell.setState:
+    updates the cells state based on its attributes
+    """
     def setState(self):
         if self.attributes["infected_time"] > LENGTH_OF_DISEASE:
             self.state = States.RESISTANT
