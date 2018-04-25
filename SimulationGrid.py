@@ -1,3 +1,7 @@
+"""
+Defines the Cellular Automata grid and provides utilities for finding the neighborhood and populating the grid.
+"""
+
 from collections import defaultdict
 import numpy as np
 

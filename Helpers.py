@@ -1,3 +1,6 @@
+"""
+Simple Logging class with util functions for printing output.
+"""
 from Constants import TIME
 class Logger:
 

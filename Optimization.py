@@ -1,3 +1,7 @@
+"""
+Hill Climbing Optimization class designed to find the optimal number of interventions for a certain simulation.
+"""
+
 import argparse
 import random
 
@@ -32,6 +36,10 @@ class Optimizer():
     # print(sim.intervention_prob)
     # print(NUM_INFECTED)
 
+    """
+    Applies interventions to cell neighborhoods. 
+    """
+
     def getNeighbor(self, vec):
         random.seed()
         masks = vec[0]
@@ -48,10 +56,15 @@ class Optimizer():
             vaccine = 0
         return (masks, dose, vaccine)
 
-
+    """
+    Computes costs of given interventions.
+    """
     def cost(self, vec):
         return MASK_COST * vec[0] + DOSE_COST * vec[1] + VACCINE_COST * vec[2]
 
+    """
+    Hill Climbing for finding optimal interventions. This is a random optimization method.
+    """
     def optimize(self, dim=None):
         num_iteration = 0
         random.seed()
