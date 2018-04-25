@@ -53,6 +53,19 @@ class States:
 
 
 class FluCell(AbstractCell):
+
+    """
+    FlueCell.__init__
+    initializer for the FlueCell class. Has two sets of parameters based on its usage
+    paramse:
+        position        location of the cell in the grid
+        suseptibility   how susceptible the cell is
+        infected_time   how long a cell ahs been infected
+        attributes      dictionary containing all of the FlueCell's attributes
+        hasMask         whether the FlueCell has a mask
+        hasDose         whether the FlueCell has a dose of medicine
+        hasVaccine      whether the FlueCell has a vaccine
+    """
     def __init__(self, position, suseptibility=None, infected_time=None, attributes=None, hasMask=None, hasDose=None,
                  hasVaccine=None):
         self.position = position
@@ -74,6 +87,12 @@ class FluCell(AbstractCell):
     def __repr__(self):
         return str(self.position)
 
+    """
+    FlueCell.applyIntervention
+    Changes the attributes of the flue cell based on the intervention type
+    params: 
+        intervention    type of intervention to be applied to the cell
+    """
     def applyIntervention(self, intervention):
         if intervention.type == InterventionType.MASK and not self.hasMask:
             self.attributes["infectability"] *= MASK_BENEFIT
@@ -85,6 +104,13 @@ class FluCell(AbstractCell):
             self.attributes["suseptibility"] *= VACCINE_BENEFIT
             self.hasVaccine = True
 
+    """
+    FlueCell.Update:
+    calculates the new values of the attributes and generates a new cell based on these values
+    params: 
+        neighbors   array of cells neighboring the Fluecell to be updated
+    returns     new FlueCell representing the updates 
+    """
     def update(self, neighbors):
         global NUM_INFECTED
         attributes = {"suseptibility": self.attributes["suseptibility"],
@@ -107,6 +133,10 @@ class FluCell(AbstractCell):
         return FluCell(position=self.position, attributes=attributes, hasMask=self.hasMask, hasDose=self.hasDose,
                        hasVaccine=self.hasVaccine)
 
+    """
+    FlueCell.setState:
+    updates the cells state based on its attributes
+    """
     def setState(self):
         if self.attributes["infected_time"] > LENGTH_OF_DISEASE:
             self.state = States.RESISTANT
@@ -120,38 +150,44 @@ class FluCell(AbstractCell):
 
 class Simulation:
     def __init__(self, dim, n_iterations, masks, doses, vaccines):
+
+        # Set inputs
         self.dim = dim
         self.n_iterations = n_iterations
         self.masks = masks
         self.doses = doses
         self.vaccines = vaccines
+
+        # Create variables to track intervention measures handed out
         self.masks_used = 0
         self.doses_used = 0
         self.vaccines_used = 0
-        self.ms = []
-        random.seed(42)
-        self.float_grid = np.array([[0 for _ in range(DIM)] for __ in range(DIM)],
-                              dtype=float)
 
+        # Stores all the state matrices for the animation
+        self.ms = []
+
+        # Calculate the probability of apply an intervention
         n_interventions = float(self.masks + self.doses + self.vaccines)
         n_interventions_per_ts = math.ceil(n_interventions / n_iterations)
         n_cells = self.dim ** 2
         self.intervention_prob = n_interventions_per_ts / n_cells
         if VERBOSE:
             print(self.intervention_prob)
+        
+        # Randomly populate the grid initially
         global grid
         self.grid = SimulationGrid((dim, dim), global_state=None)
-
         for row in range(dim):
             for col in range(dim):
-                if random.random() < .05:
+                if random.random() < .003:
                     cell = FluCell(position=(row, col), suseptibility=0, infected_time=1)
                 else:
-                    cell = FluCell(position=(row, col), suseptibility=np.random.uniform(low=BASE_SUSCEPTABILITY - 0.1,
-                                                                                        high=BASE_SUSCEPTABILITY + 0.1),
+                    cell = FluCell(position=(row, col), suseptibility=np.random.uniform(low=BASE_SUSCEPTABILITY - 0.05,
+                                                                                        high=BASE_SUSCEPTABILITY + 0.05),
                                    infected_time=0)
                 self.grid.populate(location=(row, col), cell=cell)
 
+        # Populate list of intervention measures to be applied during simulation
         self.interventions = []
         for _ in range(self.masks):
             self.interventions.append(Intervention(InterventionType.MASK, MASK_COST))
@@ -162,14 +198,20 @@ class Simulation:
         np.random.seed(42)
         np.random.shuffle(self.interventions)
 
+    """ Simulation.Update
+    Update the simulation for a timestep by applying interventions and propagating cell states
+    returns: number of people infected in this time step
+    """
     def update(self, _):
+
         global curr_t
+
         # Apply interventions probabilistically
         infected = 0
         newly_infected = 0
         for row in range(self.grid.rows):
             for col in range(self.grid.cols):
-                if len(self.interventions) > 0 and random.random() < 0.4:#self.intervention_prob:
+                if len(self.interventions) > 0 and random.random() < 0.4:
                     cell = self.grid.grid[row][col]
                     intervention = self.interventions[-1]
                     if VERBOSE:
@@ -199,19 +241,18 @@ class Simulation:
                     if self.grid.grid[row][col].state != States.INFECTED:
                         newly_infected += 1
 
+        # Update the grid to the new grid
         self.grid = new_grid
         if VERBOSE:
             print(infected)
             print(newly_infected)
-        # self.fgrid()
+
         return newly_infected
 
-    # def fgrid(self):
-    #     for i in range(DIM):
-    #         for j in range(DIM):
-    #             self.float_grid[i][j] = self.grid.grid[i][j].state - 2
-    #     mat.set_array(self.float_grid)
-
+    """ Simulation.Run
+        Runs the simulation and generates the state matrix at each time step
+        returns: score for this simulation
+    """
     def run(self):
         global curr_t
         num_infected = 0
@@ -228,21 +269,30 @@ class Simulation:
             curr_t += 1
         return num_infected/float(self.n_iterations)
 
+    """ Simulation.animate
+        Returns the state matrix for the given index
+        params: 
+            i    index of the animation
+        returns: state matrix for given index
+    """
     def animate(self, i):
         print(i)
         mat.set_data(self.ms[i])
         time.sleep(0.1)
-        # print self.ms
         return [mat]
 
 
 if __name__ == '__main__':
+
+    # Create and run the simulation
     sim = Simulation(DIM, TIME, N_MASKS, N_DOSES, N_VACCINES)
     sim.run()
     print(sim.intervention_prob)
     print(NUM_INFECTED)
     print "masks used: %s Doses used: %s Vaccines used: %s" % (sim.masks_used, sim.doses_used, sim.vaccines_used)
-    # fig, ax = plt.subplots()
-    # mat = ax.matshow(sim.ms[0])
-    # ani = animation.FuncAnimation(fig, sim.animate, frames=range(1,sim.n_iterations), blit=True)
-    # plt.show()
+
+    # Create the animation for the visualization
+    fig, ax = plt.subplots()
+    mat = ax.matshow(sim.ms[0])
+    ani = animation.FuncAnimation(fig, sim.animate, frames=range(1,sim.n_iterations), blit=True)
+    plt.show()

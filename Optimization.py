@@ -1,7 +1,3 @@
-"""
-Hill Climbing Optimization class designed to find the optimal number of interventions for a certain simulation.
-"""
-
 import argparse
 import random
 
@@ -35,11 +31,14 @@ class Optimizer():
     # sim.run()
     # print(sim.intervention_prob)
     # print(NUM_INFECTED)
-
     """
-    Applies interventions to cell neighborhoods. 
+    Optimizer.getNeighbor
+    neighbor function for the random hill climb optimizer
+    params:
+        vec    A vector representing the number of each intervention measure to search around
+    returns:
+        neighbor vector with the new number of each intervention measure
     """
-
     def getNeighbor(self, vec):
         random.seed()
         masks = vec[0]
@@ -56,14 +55,25 @@ class Optimizer():
             vaccine = 0
         return (masks, dose, vaccine)
 
+
     """
-    Computes costs of given interventions.
+    Optimizer.cost
+    The monetary cost of the combination of intervention measures
+    params: 
+        vec    Number of intervention measures to be evaluated
+    returns:
+        float cost of the given combination of intervention measures
     """
     def cost(self, vec):
         return MASK_COST * vec[0] + DOSE_COST * vec[1] + VACCINE_COST * vec[2]
 
+
     """
-    Hill Climbing for finding optimal interventions. This is a random optimization method.
+    Optimizer.optimize
+    params:
+        dim    the size of the grid to optimize against
+    returns:
+        a tuple of the best number of intervention measures and the overall score
     """
     def optimize(self, dim=None):
         num_iteration = 0
@@ -92,6 +102,15 @@ class Optimizer():
         print best_score
         return (best_vec, best_score)
 
+
+    """
+    Optimizer.run
+    runs a single test of the simulation
+    params:
+        masks    number of masks to be used
+        doses    number of doses of medicine to be used
+        vaccines number of vaccines to be used
+    """
     def run(self, masks=10, doses=10, vaccines=10):
         random.seed()
         sim = Simulation(self.DIM, self.TIME, masks, doses, vaccines)
