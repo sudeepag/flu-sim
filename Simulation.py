@@ -117,7 +117,7 @@ class FluCell(AbstractCell):
                       "infectability": self.attributes["infectability"],
                       "infected_time": self.attributes["infected_time"]}
         for neighbor in neighbors:
-            if attributes["infectability"] == 0 and 0.13 < self.attributes["suseptibility"] * neighbor["infectability"]:
+            if attributes["infectability"] == 0 and 0.12 < self.attributes["suseptibility"] * neighbor["infectability"]:
                 attributes["suseptibility"] = 0
                 attributes["infectability"] = BASE_INFECTABILITY
                 NUM_INFECTED += 1
