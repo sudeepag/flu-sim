@@ -25,6 +25,7 @@ class SimulationGrid:
             print ('Populating grid at location (%s, %s)' % (row, col))
         self.grid[row][col] = cell
 
+    #Check all 8 neighbors of each cell and append their attributes to array, accounting for cells on the edge of grid   
     def get_neighbors(self, row, col):
         neighbors = []
         left, right, up, down = False, False, False, False
